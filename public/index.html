@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#09090b">
+  <title>PhoneDrop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #09090b;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.08);
+      --accent: #8b5cf6;
+      --accent2: #d946ef;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --radius: 20px;
+    }
+
+    html, body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Ambient Effects */
+    .mesh {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: 
+        radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(217, 70, 239, 0.12) 0%, transparent 60%);
+      filter: blur(40px);
+    }
+    
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      opacity: 0.04;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .app {
+      position: relative;
+      z-index: 2;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 100px;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 48px 24px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+    }
+    .header-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header-text p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      margin-left: auto;
+      box-shadow: 0 0 12px #10b981;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px;
+      margin-bottom: 24px;
+    }
+    .tab {
+      flex: 1;
+      padding: 12px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tab.active {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(217, 70, 239, 0.1));
+      border-color: rgba(139, 92, 246, 0.5);
+      color: #fff;
+    }
+    .tab:active { transform: scale(0.95); }
+
+    /* ── Cards ── */
+    .card {
+      margin: 0 16px 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .card-body { padding: 20px; }
+
+    /* ── Text Panel ── */
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+    }
+    textarea::placeholder { color: rgba(255,255,255,0.2); }
+    
+    .text-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--border);
+    }
+    .char-count {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .paste-btn {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a5b4fc;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .paste-btn:active { background: rgba(139, 92, 246, 0.25); }
+
+    /* ── File Drop ── */
+    .file-drop {
+      border: 2px dashed rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      position: relative;
+      background: rgba(0,0,0,0.2);
+      transition: all 0.2s;
+    }
+    .file-drop:active {
+      background: rgba(139, 92, 246, 0.05);
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+    .file-drop input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%; height: 100%;
+      cursor: pointer;
+    }
+    .drop-icon {
+      width: 56px; height: 56px;
+      background: var(--surface);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 16px;
+      border: 1px solid var(--border);
+    }
+    .file-drop h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .file-drop p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── File Queue ── */
+    .file-queue { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .file-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .item-icon { font-size: 20px; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-size { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .item-del {
+      background: none; border: none; color: var(--muted);
+      padding: 4px; font-size: 16px;
+    }
+    .item-del:active { color: #ef4444; }
+
+    /* ── Progress ── */
+    .progress-wrap { margin: 0 16px 20px; display: none; }
+    .progress-wrap.show { display: block; animation: fade-in 0.3s; }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .prog-bg { height: 6px; background: rgba(255,255,255,0.05); border-radius: 100px; overflow: hidden; }
+    .prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.2s ease-out; }
+    .prog-text { font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; font-family: 'Outfit', sans-serif; }
+
+    /* ── Send Button ── */
+    .send-btn {
+      width: calc(100% - 32px);
+      margin: 0 16px;
+      padding: 18px;
+      border: none;
+      border-radius: 16px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .send-btn:active { transform: scale(0.96); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); }
+    .send-btn:disabled { opacity: 0.5; box-shadow: none; pointer-events: none; filter: grayscale(1); }
+    
+    .send-btn .spinner { display: none; width: 22px; height: 22px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; position: absolute; }
+    .send-btn.loading .btn-txt { opacity: 0; }
+    .send-btn.loading .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Quick Grid ── */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 16px;
+    }
+    .quick-tile {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quick-tile:active { background: rgba(139, 92, 246, 0.08); border-color: rgba(139, 92, 246, 0.4); transform: scale(0.96); }
+    .qt-icon { font-size: 32px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
+    .qt-label { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 500; color: #cbd5e1; }
+    
+    .quick-tile.full { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; padding: 20px 24px; }
+    .quick-tile.full .qt-left { display: flex; align-items: center; gap: 16px; }
+
+    /* Panels */
+    .panel { display: none; animation: fade-in 0.3s; }
+    .panel.active { display: block; }
+
+    /* Toast */
+    .toast-container { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 100; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast {
+      padding: 16px;
+      background: rgba(20, 20, 25, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      font-size: 14px; font-weight: 500;
+      display: flex; align-items: center; gap: 12px;
+      pointer-events: auto;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+      animation: t-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.success { border-color: rgba(16, 185, 129, 0.4); }
+    .toast.success .t-icon { color: #10b981; }
+    .toast.error { border-color: rgba(239, 68, 68, 0.4); }
+    .toast.error .t-icon { color: #ef4444; }
+    @keyframes t-in { from { opacity: 0; transform: translateY(-20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes t-out { to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
+
+    /* Hidden Inputs */
+    .hidden-input { position: absolute; width: 0; height: 0; opacity: 0; visibility: hidden; }
+  </style>
+</head>
+<body>
+  <div class="mesh"></div>
+  <div class="noise"></div>
+
+  <div class="app">
+    <div class="header">
+      <div class="logo">🚀</div>
+      <div class="header-text">
+        <h1>PhoneDrop</h1>
+        <p id="pcAddr">Connecting...</p>
+      </div>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="setTab('text', this)">📝 Text</div>
+      <div class="tab" onclick="setTab('files', this)">📂 Files</div>
+      <div class="tab" onclick="setTab('quick', this)">⚡ Quick</div>
+    </div>
+
+    <!-- TEXT -->
+    <div class="panel active" id="p-text">
+      <div class="card">
+        <div class="card-body">
+          <textarea id="txtIn" placeholder="Type or paste anything here... Links, notes, codes..."></textarea>
+          <div class="text-footer">
+            <button class="paste-btn" onclick="pasteTxt()">📋 Paste</button>
+            <div class="char-count" id="cCount">0 chars</div>
+          </div>
+        </div>
+      </div>
+      <button class="send-btn" id="sTxt" onclick="sendTxt()">
+        <div class="spinner"></div><span class="btn-txt">Send to PC</span>
+      </button>
+    </div>
+
+    <!-- FILES -->
+    <div class="panel" id="p-files">
+      <div class="card">
+        <div class="card-body">
+          <div class="file-drop">
+            <input type="file" id="fIn" multiple accept="*/*" onchange="fileSel(event)">
+            <div class="drop-icon">📤</div>
+            <h3>Tap to browse files</h3>
+            <p>Documents, PDFs, Archives</p>
+          </div>
+          <div class="file-queue" id="fQueue"></div>
+        </div>
+      </div>
+      
+      <div class="progress-wrap" id="progWrap">
+        <div class="prog-bg"><div class="prog-fill" id="progFill"></div></div>
+        <div class="prog-text" id="progTxt">Uploading...</div>
+      </div>
+
+      <button class="send-btn" id="sFiles" onclick="sendFls()" disabled>
+        <div class="spinner"></div><span class="btn-txt">Send Files</span>
+      </button>
+    </div>
+
+    <!-- QUICK -->
+    <div class="panel" id="p-quick">
+      <div class="quick-grid">
+        <div class="quick-tile" onclick="document.getElementById('cIn').click()">
+          <div class="qt-icon">📷</div>
+          <div class="qt-label">Camera</div>
+        </div>
+        <div class="quick-tile" onclick="document.getElementById('gIn').click()">
+          <div class="qt-icon">🖼️</div>
+          <div class="qt-label">Gallery</div>
+        </div>
+        <div class="quick-tile full" onclick="pasteSend()">
+          <div class="qt-left">
+            <div class="qt-icon">📋</div>
+            <div class="qt-label">Paste & Send</div>
+          </div>
+          <span style="color:var(--muted)">→</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toasts"></div>
+
+  <!-- Hidden -->
+  <input class="hidden-input" type="file" id="cIn" accept="image/*,video/*" capture="environment" onchange="qFile(event)">
+  <input class="hidden-input" type="file" id="gIn" accept="image/*,video/*" multiple onchange="qFile(event)">
+
+  <script>
+    let ws, queue = [];
+
+    // WS & Init
+    function initWS() {
+      ws = new WebSocket(`ws://${location.host}`);
+      const dot = document.getElementById('statusDot');
+      ws.onopen = () => { dot.style.background = '#10b981'; dot.style.boxShadow = '0 0 12px #10b981'; };
+      ws.onclose = () => { dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 12px #ef4444'; setTimeout(initWS, 3000); };
+      ws.onerror = ws.onclose;
+    }
+    initWS();
+
+    fetch('/api/qr').then(r=>r.json()).then(d => {
+      document.getElementById('pcAddr').textContent = 'Connected to PC';
+    }).catch(()=>{});
+
+    // UI
+    function setTab(id, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('p-' + id).classList.add('active');
+    }
+
+    document.getElementById('txtIn').addEventListener('input', e => {
+      document.getElementById('cCount').textContent = e.target.value.length.toLocaleString() + ' chars';
+    });
+
+    // Text
+    async function pasteTxt() {
+      try {
+        document.getElementById('txtIn').value = await navigator.clipboard.readText();
+        document.getElementById('cCount').textContent = document.getElementById('txtIn').value.length + ' chars';
+      } catch { toast('Allow clipboard access to paste', 'error'); }
+    }
+
+    async function sendTxt() {
+      const text = document.getElementById('txtIn').value.trim();
+      if (!text) return toast('Nothing to send', 'error');
+      const btn = document.getElementById('sTxt');
+      btn.classList.add('loading'); btn.disabled = true;
+      try {
+        const r = await fetch('/api/text', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text}) });
+        if ((await r.json()).ok) {
+          toast('Text sent successfully', 'success');
+          document.getElementById('txtIn').value = '';
+          document.getElementById('cCount').textContent = '0 chars';
+        } else toast('Failed to send', 'error');
+      } catch { toast('Network error', 'error'); }
+      finally { btn.classList.remove('loading'); btn.disabled = false; }
+    }
+
+    async function pasteSend() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) return toast('Clipboard is empty', 'error');
+        const r = await fetch('/api/text', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text}) });
+        if ((await r.json()).ok) toast('Clipboard sent!', 'success');
+      } catch { toast('Clipboard permission needed', 'error'); }
+    }
+
+    // Files
+    function fileSel(e) {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      files.forEach(f => queue.push(f));
+      renderQ();
+    }
+
+    function renderQ() {
+      const q = document.getElementById('fQueue');
+      q.innerHTML = '';
+      queue.forEach((f, i) => {
+        let size = f.size < 1048576 ? (f.size/1024).toFixed(1)+' KB' : (f.size/1048576).toFixed(1)+' MB';
+        let icon = f.type.includes('image') ? '🖼️' : f.type.includes('video') ? '🎬' : '📄';
+        q.innerHTML += `
+          <div class="file-item">
+            <span class="item-icon">${icon}</span>
+            <div class="item-info">
+              <div class="item-name">${f.name}</div>
+              <div class="item-size">${size}</div>
+            </div>
+            <button class="item-del" onclick="queue.splice(${i},1); renderQ()">✕</button>
+          </div>
+        `;
+      });
+      document.getElementById('sFiles').disabled = !queue.length;
+    }
+
+    function sendFls() {
+      if(!queue.length) return;
+      const btn = document.getElementById('sFiles'), wrap = document.getElementById('progWrap');
+      btn.classList.add('loading'); btn.disabled = true; wrap.classList.add('show');
+      
+      const form = new FormData();
+      queue.forEach(f => form.append('files', f));
+      
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/files');
+      xhr.upload.onprogress = e => {
+        if(e.lengthComputable) {
+          let pct = Math.round(e.loaded / e.total * 100);
+          document.getElementById('progFill').style.width = pct + '%';
+          document.getElementById('progTxt').textContent = `Uploading... ${pct}%`;
+        }
+      };
+      xhr.onload = () => {
+        wrap.classList.remove('show'); btn.classList.remove('loading');
+        if(xhr.status === 200) {
+          toast('Files sent successfully!', 'success');
+          queue = []; renderQ();
+          document.getElementById('fIn').value = ''; // Clean safely after upload
+        } else toast('Upload failed', 'error');
+      };
+      xhr.onerror = () => { wrap.classList.remove('show'); btn.classList.remove('loading'); toast('Network error', 'error'); };
+      xhr.send(form);
+    }
+
+    // Quick File
+    function qFile(e) {
+      const files = Array.from(e.target.files);
+      if(!files.length) return;
+      const form = new FormData();
+      files.forEach(f => form.append('files', f));
+      toast('Sending...', 'info');
+      fetch('/api/files', { method: 'POST', body: form })
+        .then(async r => {
+          if(r.ok) toast('Sent successfully!', 'success');
+          else toast('Upload failed', 'error');
+        }).catch(() => toast('Network error', 'error'))
+        .finally(() => e.target.value = ''); // Clean safely
+    }
+
+    // Toast
+    function toast(msg, type='info') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      const icn = type === 'success' ? `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="t-icon"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      ` : type === 'error' ? `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="t-icon"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+      ` : 'ℹ️';
+      el.innerHTML = `${icn} <span>${msg}</span>`;
+      document.getElementById('toasts').prepend(el);
+      setTimeout(() => {
+        el.style.animation = 't-out 0.3s ease forwards';
+        setTimeout(() => el.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhoneDrop — Connect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #09090b;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.08);
+      --accent: #8b5cf6;
+      --accent2: #d946ef;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    /* Ambient Background Effects */
+    .mesh {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: 
+        radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(217, 70, 239, 0.15) 0%, transparent 50%);
+      filter: blur(60px);
+    }
+    
+    .noise {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      opacity: 0.04;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* Left Panel - Hero */
+    .hero {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 10%;
+      border-right: 1px solid var(--border);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.01));
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      animation: fade-up 0.8s ease-out;
+    }
+
+    .brand-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);
+    }
+
+    .brand-name {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(to right, #fff, #a5b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -2px;
+      margin-bottom: 24px;
+      animation: fade-up 0.8s ease-out 0.1s backwards;
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-weight: 300;
+      max-width: 480px;
+      animation: fade-up 0.8s ease-out 0.2s backwards;
+    }
+
+    .features {
+      margin-top: 48px;
+      display: flex;
+      gap: 24px;
+      animation: fade-up 0.8s ease-out 0.3s backwards;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      color: #cbd5e1;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Right Panel - QR */
+    .connect-panel {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .glass-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 1px solid rgba(255,255,255,0.15);
+      border-left: 1px solid rgba(255,255,255,0.15);
+      border-radius: 32px;
+      padding: 48px;
+      width: 100%;
+      max-width: 440px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: scale-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #34d399;
+      margin-bottom: 32px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #34d399;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #34d399;
+      animation: pulse 2s infinite;
+    }
+
+    .qr-container {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
+    }
+    .qr-container:hover {
+      transform: translateY(-4px) scale(1.02);
+    }
+    
+    .qr-container img {
+      width: 240px;
+      height: 240px;
+      display: block;
+    }
+
+    .url-box {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      font-family: 'Inter', monospace;
+      font-size: 15px;
+      color: #a5b4fc;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    .instructions {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .step strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* Animations */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scale-up {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    @media (max-width: 960px) {
+      body {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+      }
+      .hero {
+        padding: 40px 24px;
+        text-align: center;
+        align-items: center;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .hero h1 { font-size: 40px; }
+      .features { flex-direction: column; gap: 16px; align-items: center; }
+      .connect-panel { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mesh"></div>
+  <div class="noise"></div>
+
+  <div class="hero">
+    <div class="brand">
+      <div class="brand-icon">🚀</div>
+      <div class="brand-name">PhoneDrop</div>
+    </div>
+    <h1>Your PC &amp; Phone.<br>Perfectly Synced.</h1>
+    <p>No cables, no cloud, no friction. Just a seamless local connection to drop files, photos, and text instantly between your devices.</p>
+    
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <span>Instant Local Transfer</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <span>100% Private (No Cloud)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connect-panel">
+    <div class="glass-card">
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        Server Active — Port 7171
+      </div>
+
+      <div class="qr-container">
+        <img id="qrImg" src="" alt="QR Code">
+      </div>
+
+      <div class="url-box" id="urlBox">Waiting for local IP...</div>
+
+      <div class="instructions">
+        <div class="step">
+          <span>1️⃣</span>
+          <span>Ensure phone &amp; PC share the <strong>same Wi-Fi</strong></span>
+        </div>
+        <div class="step">
+          <span>2️⃣</span>
+          <span>Open your phone's <strong>Camera app</strong></span>
+        </div>
+        <div class="step">
+          <span>3️⃣</span>
+          <span><strong>Scan the QR</strong> to start dropping</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    fetch('/api/qr')
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('qrImg').src = d.qr;
+        document.getElementById('urlBox').textContent = d.url;
+      });
+  </script>
+</body>
+</html>
