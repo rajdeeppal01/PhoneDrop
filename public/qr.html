@@ -274,6 +274,40 @@
       .features { flex-direction: column; gap: 16px; align-items: center; }
       .connect-panel { padding: 40px 24px; }
     }
+
+    /* Drag & Drop Overlay */
+    .drop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(139, 92, 246, 0.9);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    .drop-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .drop-overlay h2 {
+      font-size: 48px;
+      font-weight: 700;
+      color: white;
+      margin-top: 24px;
+    }
+    .drop-icon {
+      font-size: 80px;
+      animation: bounce 1s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
   </style>
 </head>
 <body>
@@ -330,6 +364,11 @@
     </div>
   </div>
 
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-icon">🚀</div>
+    <h2 id="dropText">Drop to send to phone</h2>
+  </div>
+
   <script>
     fetch('/api/qr')
       .then(r => r.json())
@@ -337,6 +376,58 @@
         document.getElementById('qrImg').src = d.qr;
         document.getElementById('urlBox').textContent = d.url;
       });
+
+    // Drag and Drop Logic
+    const overlay = document.getElementById('dropOverlay');
+    let dragCounter = 0;
+
+    window.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      overlay.classList.add('active');
+    });
+
+    window.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) overlay.classList.remove('active');
+    });
+
+    window.addEventListener('dragover', (e) => e.preventDefault());
+
+    window.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      
+      const files = e.dataTransfer.files;
+      if (files.length === 0) {
+        overlay.classList.remove('active');
+        return;
+      }
+
+      document.getElementById('dropText').textContent = 'Sending...';
+      
+      const form = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        form.append('files', files[i]);
+      }
+
+      try {
+        const res = await fetch('/api/pc-to-phone', { method: 'POST', body: form });
+        if (res.ok) {
+          document.getElementById('dropText').textContent = 'Sent! Check your phone.';
+          setTimeout(() => {
+            overlay.classList.remove('active');
+            setTimeout(() => document.getElementById('dropText').textContent = 'Drop to send to phone', 300);
+          }, 2000);
+        } else {
+          throw new Error('Upload failed');
+        }
+      } catch (err) {
+        document.getElementById('dropText').textContent = 'Failed to send!';
+        setTimeout(() => overlay.classList.remove('active'), 2000);
+      }
+    });
   </script>
 </body>
 </html>

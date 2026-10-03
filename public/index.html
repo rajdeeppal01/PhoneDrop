@@ -437,6 +437,15 @@
       ws.onopen = () => { dot.style.background = '#10b981'; dot.style.boxShadow = '0 0 12px #10b981'; };
       ws.onclose = () => { dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 12px #ef4444'; setTimeout(initWS, 3000); };
       ws.onerror = ws.onclose;
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data.type === 'pc_files') {
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            data.files.forEach(showDownloadToast);
+          }
+        } catch(e){}
+      };
     }
     initWS();
 
@@ -576,6 +585,32 @@
         el.style.animation = 't-out 0.3s ease forwards';
         setTimeout(() => el.remove(), 300);
       }, 3000);
+    }
+
+    function showDownloadToast(f) {
+      const el = document.createElement('div');
+      el.className = `toast`;
+      el.style.flexDirection = 'column';
+      el.style.alignItems = 'stretch';
+      el.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom: 8px;">
+          <span style="font-size:24px">📥</span>
+          <div style="flex:1; min-width:0">
+            <div style="font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">PC sent: ${f.original}</div>
+            <div style="font-size:12px; color:var(--muted)">${(f.size/1024).toFixed(1)} KB</div>
+          </div>
+          <button onclick="this.closest('.toast').remove()" style="background:none; border:none; color:var(--muted); font-size:16px; padding:4px">✕</button>
+        </div>
+        <a href="${f.url}" download="${f.original}" target="_blank" onclick="setTimeout(()=>this.closest('.toast').remove(),500)" style="display:block; text-align:center; background:var(--accent); color:white; text-decoration:none; padding:10px; border-radius:10px; font-weight:600; font-size:14px;">Download to Phone</a>
+      `;
+      document.getElementById('toasts').prepend(el);
+      // Keep it on screen longer so they have time to tap it
+      setTimeout(() => {
+        if(el.parentElement) {
+          el.style.animation = 't-out 0.3s ease forwards';
+          setTimeout(() => el.remove(), 300);
+        }
+      }, 30000);
     }
   </script>
 </body>

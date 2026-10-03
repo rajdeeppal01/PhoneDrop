@@ -84,6 +84,8 @@ const upload = multer({ storage, limits: { fileSize: 500 * 1024 * 1024 } });
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve the drop directory so phones can download files
+app.use('/downloads', express.static(DROP_DIR));
 
 // ── API: Send text ────────────────────────────────────────────────────────────
 app.post('/api/text', (req, res) => {
@@ -138,6 +140,24 @@ app.post('/api/files', upload.array('files', 50), (req, res) => {
     sound: true,
     appID: 'PhoneDrop'
   });
+
+  res.json({ ok: true, files: saved });
+});
+
+// ── API: PC to Phone (Drag on QR screen) ──────────────────────────────────────
+app.post('/api/pc-to-phone', upload.array('files', 50), (req, res) => {
+  if (!req.files || req.files.length === 0)
+    return res.status(400).json({ error: 'No files received' });
+
+  const saved = req.files.map(f => ({
+    name: f.filename,
+    original: f.originalname,
+    size: f.size,
+    url: `/downloads/${encodeURIComponent(f.filename)}`
+  }));
+
+  // Broadcast only to phones to trigger a download popup
+  broadcast({ type: 'pc_files', files: saved });
 
   res.json({ ok: true, files: saved });
 });
